@@ -12,11 +12,10 @@
 
   // Enable Marzipano controls
   const controls = viewer.controls();
-  controls.enableMethod('scrollZoom');      // Also allows native zoom
+  controls.enableMethod('scrollZoom');
   controls.enableMethod('mouseViewDrag');
   controls.enableMethod('touchView');
 
-  // ✅ Smooth, safe manual scroll zoom
   panoElement.addEventListener('wheel', (event) => {
     if (!currentView) return;
 
@@ -24,15 +23,12 @@
 
     const delta = event.deltaY;
     const fov = currentView.fov();
-
-    const zoomFactor = 0.004; // Adjust for scroll sensitivity
+    const zoomFactor = 0.004;
     const newFov = fov + delta * zoomFactor;
-
-    const clampedFov = Math.max(0.4, Math.min(newFov, 1.5)); // Clamp zoom range
+    const clampedFov = Math.max(0.4, Math.min(newFov, 1.5));
     currentView.setParameters({ fov: clampedFov });
   }, { passive: false });
 
-  // UI elements
   const mapToggle = document.getElementById('mapToggle');
   const mapPanel = document.getElementById('mapPanel');
   const floorplan = document.getElementById('floorplan');
@@ -104,12 +100,11 @@
     const source = Marzipano.ImageUrlSource.fromString(imagePath);
     const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
 
-    // ✅ Use safe zoom range limiter
     const limiter = Marzipano.RectilinearView.limit.traditional(1024, 1.5);
     const view = new Marzipano.RectilinearView({
       yaw: 0,
       pitch: 0,
-      fov: 1.2 // Good mid-zoom starting point
+      fov: 1.2
     }, limiter);
 
     const scene = viewer.createScene({
@@ -118,10 +113,9 @@
       view
     });
 
-    currentView = view; // Reference for zoom
+    currentView = view;
     scene.switchTo({ transitionDuration: 1000 });
 
-    // Autorotate
     const autorotate = Marzipano.autorotate({
       yawSpeed: 0.02,
       targetPitch: 0,
@@ -129,17 +123,18 @@
     });
     viewer.startMovement(autorotate);
   }
+
+  // ✅ Make loadScene globally available so dot clicks work
+  window.loadScene = loadScene;
 })();
 
-// Show map on load and draw dots after layout is complete
+// ✅ Show map and draw dots on initial page load
 window.addEventListener("load", () => {
   const mapPanel = document.getElementById('mapPanel');
   const floorplan = document.getElementById('floorplan');
 
-  // Force map to be visible on page load
   mapPanel.style.display = 'block';
 
-  // Wait until floorplan is fully rendered with real dimensions
   function drawDotsWhenReady(retries = 10) {
     const rect = floorplan.getBoundingClientRect();
     const fullyRendered = floorplan.complete && rect.width > 0 && rect.height > 0;
