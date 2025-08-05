@@ -130,15 +130,44 @@
     viewer.startMovement(autorotate);
   }
 })();
+
+// Show map on load and draw dots after layout is complete
 const mapPanel = document.getElementById('mapPanel');
 mapPanel.style.display = 'block';
 
-requestAnimationFrame(() => {
-  const floorplan = document.getElementById('floorplan');
-  if (floorplan.complete) {
-    drawDotsSafely();
-  } else {
-    floorplan.addEventListener('load', drawDotsSafely);
-  }
-});
+const floorplan = document.getElementById('floorplan');
 
+function waitAndDrawDots() {
+  setTimeout(() => {
+    const rect = floorplan.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      document.querySelectorAll('.dot').forEach(dot => dot.remove());
+      fetch('hotspots.json')
+        .then(res => res.json())
+        .then(hotspots => {
+          const width = rect.width;
+          const height = rect.height;
+          const container = document.getElementById('floorplanContainer');
+          hotspots.forEach((dot, index) => {
+            const el = document.createElement('div');
+            el.className = 'dot';
+            const x = dot.x * width;
+            const y = dot.y * height;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.title = dot.filename || `Scene ${index + 1}`;
+            el.addEventListener('click', () => loadScene(dot.photo));
+            container.appendChild(el);
+          });
+        });
+    } else {
+      waitAndDrawDots(); // Try again if image isn't rendered yet
+    }
+  }, 50);
+}
+
+if (floorplan.complete) {
+  waitAndDrawDots();
+} else {
+  floorplan.addEventListener('load', waitAndDrawDots);
+}
