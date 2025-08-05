@@ -130,4 +130,15 @@
     viewer.startMovement(autorotate);
   }
 })();
-document.getElementById('mapPanel').style.display = 'block';
+const mapPanel = document.getElementById('mapPanel');
+mapPanel.style.display = 'block';
+
+requestAnimationFrame(() => {
+  const floorplan = document.getElementById('floorplan');
+  if (floorplan.complete) {
+    drawDotsSafely();
+  } else {
+    floorplan.addEventListener('load', drawDotsSafely);
+  }
+});
+
