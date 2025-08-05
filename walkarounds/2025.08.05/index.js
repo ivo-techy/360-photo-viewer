@@ -132,15 +132,19 @@
 })();
 
 // Show map on load and draw dots after layout is complete
-const mapPanel = document.getElementById('mapPanel');
-mapPanel.style.display = 'block';
+window.addEventListener("load", () => {
+  const mapPanel = document.getElementById('mapPanel');
+  const floorplan = document.getElementById('floorplan');
 
-const floorplan = document.getElementById('floorplan');
+  // Force map to be visible on page load
+  mapPanel.style.display = 'block';
 
-function waitAndDrawDots() {
-  setTimeout(() => {
+  // Wait until floorplan is fully rendered with real dimensions
+  function drawDotsWhenReady(retries = 10) {
     const rect = floorplan.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
+    const fullyRendered = floorplan.complete && rect.width > 0 && rect.height > 0;
+
+    if (fullyRendered) {
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
       fetch('hotspots.json')
         .then(res => res.json())
@@ -160,14 +164,12 @@ function waitAndDrawDots() {
             container.appendChild(el);
           });
         });
+    } else if (retries > 0) {
+      setTimeout(() => drawDotsWhenReady(retries - 1), 100);
     } else {
-      waitAndDrawDots(); // Try again if image isn't rendered yet
+      console.warn("Failed to draw dots: floorplan image never rendered properly.");
     }
-  }, 50);
-}
+  }
 
-if (floorplan.complete) {
-  waitAndDrawDots();
-} else {
-  floorplan.addEventListener('load', waitAndDrawDots);
-}
+  drawDotsWhenReady();
+});
