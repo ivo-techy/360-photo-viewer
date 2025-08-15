@@ -1,23 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marzipano Floorplan Viewer</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>360 Walkarounds</title>
+  <style>
+    :root {
+      --bg: #0f1115; --panel: #171a21; --border: #222733;
+      --text: #e6e6e6; --muted: #9aa0a6; --btn: #1e2330; --btnh: #252c3b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin: 0 0 6px; font-size: 1.75rem; }
+    p.note { margin: 0 0 18px; color: var(--muted); }
+    .toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0 16px; }
+    .search { width: 280px; max-width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+    .grid { display: grid; gap: 12px; }
+    .card { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border); background: var(--panel); border-radius: 16px; }
+    .left { display: flex; flex-direction: column; gap: 4px; }
+    .name { font-weight: 600; letter-spacing: .2px; }
+    .path { color: var(--muted); font-size: .94rem; }
+    .right { display: flex; gap: 8px; }
+    .btn { display: inline-block; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--btn); color: var(--text); text-decoration: none; }
+    .btn:hover { background: var(--btnh); }
+    .empty, .error { margin-top: 16px; color: var(--muted); }
+    .error { color: #ffb4b4; white-space: pre-wrap; }
+  </style>
 </head>
-
 <body>
-  <div id="pano"></div>
-  <button id="mapToggle">☰ Map</button>
+  <div class="wrap">
+    <h1>Projects</h1>
+    <p class="note">Choose a project to see all walkaround dates. You can still share a single day by sending a direct link to that date’s folder.</p>
 
-  <div id="mapPanel">
-    <div id="floorplanContainer">
-      <img src="img/Kaart.png" id="floorplan" alt="Floorplan">
+    <div class="toolbar">
+      <input id="q" class="search" type="search" placeholder="Filter projects…" />
     </div>
+
+    <div id="list" class="grid" aria-live="polite"></div>
+    <div id="msg" class="empty" hidden>No projects found.</div>
+    <div id="err" class="error" hidden></div>
   </div>
 
-  <script src="vendor/marzipano.js"></script>
-  <script src="index.js"></script>
+  <script>
+    (async function () {
+      const list = document.getElementById('list');
+      const msg = document.getElementById('msg');
+      const err = document.getElementById('err');
+      const search = document.getElementById('q');
+
+      try {
+        // Read projects manifest (no cache so GitHub Pages shows updates immediately)
+        const res = await fetch('projects.json', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        /** @type {{name:string, folder:string}[]} */
+        let projects = await res.json();
+
+        // Basic validation/normalization
+        if (!Array.isArray(projects)) throw new Error('projects.json must be an array');
+        projects = projects
+          .filter(p => p && p.folder)
+          .map(p => ({ name: p.name || p.folder, folder: p.folder }));
+
+        // Sort by name
+        projects.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+        const render = () => {
+          const q = search.value.trim().toLowerCase();
+          list.innerHTML = '';
+          let count = 0;
+
+          for (const p of projects) {
+            const text = (p.name + ' ' + p.folder).toLowerCase();
+            if (q && !text.includes(q)) continue;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const left = document.createElement('div');
+            left.className = 'left';
+            const nm = document.createElement('div');
+            nm.className = 'name';
+            nm.textContent = p.name;
+            const path = document.createElement('div');
+            path.className = 'path';
+            path.textContent = `/${p.folder}`;
+
+            left.appendChild(nm);
+            left.appendChild(path);
+
+            const right = document.createElement('div');
+            right.className = 'right';
+
+            // Open project landing page (expects /<folder>/index.html)
+            const open = document.createElement('a');
+            open.className = 'btn';
+            open.href = `${p.folder}/`;
+            open.textContent = 'Open project';
+
+            right.appendChild(open);
+            card.appendChild(left);
+            card.appendChild(right);
+            list.appendChild(card);
+            count++;
+          }
+
+          msg.hidden = count !== 0;
+        };
+
+        render();
+        search.addEventListener('input', render);
+
+      } catch (e) {
+        err.hidden = false;
+        err.textContent = 'Failed to load projects.json:\n' + (e && e.message ? e.message : e);
+      }
+    })();
+  </script>
 </body>
 </html>
