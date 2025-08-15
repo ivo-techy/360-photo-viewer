@@ -97,6 +97,11 @@
   function loadScene(imagePath) {
     console.log("Loading scene:", imagePath);
 
+    // ✅ Automatically prepend "photos/" if needed
+    if (!/^https?:\/\//.test(imagePath) && !imagePath.startsWith('photos/')) {
+      imagePath = 'photos/' + imagePath;
+    }
+
     const source = Marzipano.ImageUrlSource.fromString(imagePath);
     const geometry = new Marzipano.EquirectGeometry([{ width: 8192 }]);
 
