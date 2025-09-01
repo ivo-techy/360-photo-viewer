@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Suur-Sõjamäe 31a - Walkarounds</title>
+  <title>360 Walkarounds</title>
   <style>
     :root {
       --bg: #0f1115; --panel: #171a21; --border: #222733;
@@ -14,9 +14,6 @@
     .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; }
     h1 { margin: 0 0 6px; font-size: 1.75rem; }
     p.note { margin: 0 0 18px; color: var(--muted); }
-    .nav { margin: 0 0 24px; }
-    .nav a { color: var(--muted); text-decoration: none; }
-    .nav a:hover { color: var(--text); }
     .toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0 16px; }
     .search { width: 280px; max-width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
     .grid { display: grid; gap: 12px; }
@@ -33,19 +30,15 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="nav">
-      <a href="../../">← Back to Sites</a>
-    </div>
-    
-    <h1>Suur-Sõjamäe 31a</h1>
-    <p class="note">Choose a walkaround date to explore the 360° photos from that visit.</p>
+    <h1>Construction Sites</h1>
+    <p class="note">Choose a construction site to see all walkaround dates. You can still share a single day by sending a direct link to that date's folder.</p>
 
     <div class="toolbar">
-      <input id="q" class="search" type="search" placeholder="Filter walkarounds…" />
+      <input id="q" class="search" type="search" placeholder="Filter sites…" />
     </div>
 
     <div id="list" class="grid" aria-live="polite"></div>
-    <div id="msg" class="empty" hidden>No walkarounds found.</div>
+    <div id="msg" class="empty" hidden>No sites found.</div>
     <div id="err" class="error" hidden></div>
   </div>
 
@@ -57,42 +50,29 @@
       const search = document.getElementById('q');
 
       try {
-        // Read walkarounds manifest (no cache so GitHub Pages shows updates immediately)
-        const res = await fetch('walkarounds.json', { cache: 'no-store' });
+        // Read sites manifest (no cache so GitHub Pages shows updates immediately)
+        const res = await fetch('./sites.json', { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-        /** @type {string[]} */
-        let walkarounds = await res.json();
+        /** @type {{name:string, folder:string, description?:string}[]} */
+        let sites = await res.json();
 
         // Basic validation/normalization
-        if (!Array.isArray(walkarounds)) throw new Error('walkarounds.json must be an array');
-        walkarounds = walkarounds.filter(w => w && typeof w === 'string');
+        if (!Array.isArray(sites)) throw new Error('sites.json must be an array');
+        sites = sites
+          .filter(s => s && s.folder)
+          .map(s => ({ name: s.name || s.folder, folder: s.folder, description: s.description }));
 
-        const formatDate = (dateStr) => {
-          // Convert DD.MM.YYYY to a more readable format
-          const [day, month, year] = dateStr.split('.');
-          const date = new Date(year, month - 1, day);
-          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          return `${day} ${months[date.getMonth()]} ${year}`;
-        };
+        // Sort by name
+        sites.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
         const render = () => {
           const q = search.value.trim().toLowerCase();
           list.innerHTML = '';
           let count = 0;
 
-          // Sort dates chronologically (newest first)
-          const sortedWalkarounds = [...walkarounds].sort((a, b) => {
-            const [dayA, monthA, yearA] = a.split('.').map(Number);
-            const [dayB, monthB, yearB] = b.split('.').map(Number);
-            const dateA = new Date(yearA, monthA - 1, dayA);
-            const dateB = new Date(yearB, monthB - 1, dayB);
-            return dateB - dateA; // Newest first
-          });
-
-          for (const date of sortedWalkarounds) {
-            const formattedDate = formatDate(date);
-            if (q && !formattedDate.toLowerCase().includes(q) && !date.toLowerCase().includes(q)) continue;
+          for (const s of sites) {
+            const text = (s.name + ' ' + s.folder + ' ' + (s.description || '')).toLowerCase();
+            if (q && !text.includes(q)) continue;
 
             const card = document.createElement('div');
             card.className = 'card';
@@ -101,10 +81,10 @@
             left.className = 'left';
             const nm = document.createElement('div');
             nm.className = 'name';
-            nm.textContent = formattedDate;
+            nm.textContent = s.name;
             const path = document.createElement('div');
             path.className = 'path';
-            path.textContent = `Walkaround from ${formattedDate}`;
+            path.textContent = s.description || `sites/${s.folder}`;
 
             left.appendChild(nm);
             left.appendChild(path);
@@ -112,11 +92,11 @@
             const right = document.createElement('div');
             right.className = 'right';
 
-            // Open walkaround viewer
+            // Open site landing page (expects sites/<folder>/index.html)
             const open = document.createElement('a');
             open.className = 'btn';
-            open.href = `${date}/`;
-            open.textContent = 'View 360°';
+            open.href = `sites/${s.folder}/`;
+            open.textContent = 'View walkarounds';
 
             right.appendChild(open);
             card.appendChild(left);
@@ -133,7 +113,7 @@
 
       } catch (e) {
         err.hidden = false;
-        err.textContent = 'Failed to load walkarounds.json:\n' + (e && e.message ? e.message : e);
+        err.textContent = 'Failed to load sites.json:\n' + (e && e.message ? e.message : e);
       }
     })();
   </script>

@@ -4,118 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>360 Walkarounds</title>
-  <style>
-    :root {
-      --bg: #0f1115; --panel: #171a21; --border: #222733;
-      --text: #e6e6e6; --muted: #9aa0a6; --btn: #1e2330; --btnh: #252c3b;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
-    .wrap { max-width: 900px; margin: 40px auto; padding: 0 16px; }
-    h1 { margin: 0 0 6px; font-size: 1.75rem; }
-    p.note { margin: 0 0 18px; color: var(--muted); }
-    .toolbar { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0 16px; }
-    .search { width: 280px; max-width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-    .grid { display: grid; gap: 12px; }
-    .card { display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 1px solid var(--border); background: var(--panel); border-radius: 16px; }
-    .left { display: flex; flex-direction: column; gap: 4px; }
-    .name { font-weight: 600; letter-spacing: .2px; }
-    .path { color: var(--muted); font-size: .94rem; }
-    .right { display: flex; gap: 8px; }
-    .btn { display: inline-block; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--btn); color: var(--text); text-decoration: none; }
-    .btn:hover { background: var(--btnh); }
-    .empty, .error { margin-top: 16px; color: var(--muted); }
-    .error { color: #ffb4b4; white-space: pre-wrap; }
-  </style>
+  <script>
+    // Redirect to sites directory
+    window.location.replace('./sites/');
+  </script>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Construction Sites</h1>
-    <p class="note">Choose a construction site to see all walkaround dates. You can still share a single day by sending a direct link to that date's folder.</p>
-
-    <div class="toolbar">
-      <input id="q" class="search" type="search" placeholder="Filter sites…" />
-    </div>
-
-    <div id="list" class="grid" aria-live="polite"></div>
-    <div id="msg" class="empty" hidden>No sites found.</div>
-    <div id="err" class="error" hidden></div>
-  </div>
-
-  <script>
-    (async function () {
-      const list = document.getElementById('list');
-      const msg = document.getElementById('msg');
-      const err = document.getElementById('err');
-      const search = document.getElementById('q');
-
-      try {
-        // Read sites manifest (no cache so GitHub Pages shows updates immediately)
-        const res = await fetch('sites.json', { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-        /** @type {{name:string, folder:string, description?:string}[]} */
-        let sites = await res.json();
-
-        // Basic validation/normalization
-        if (!Array.isArray(sites)) throw new Error('sites.json must be an array');
-        sites = sites
-          .filter(s => s && s.folder)
-          .map(s => ({ name: s.name || s.folder, folder: s.folder, description: s.description }));
-
-        // Sort by name
-        sites.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-
-        const render = () => {
-          const q = search.value.trim().toLowerCase();
-          list.innerHTML = '';
-          let count = 0;
-
-          for (const s of sites) {
-            const text = (s.name + ' ' + s.folder + ' ' + (s.description || '')).toLowerCase();
-            if (q && !text.includes(q)) continue;
-
-            const card = document.createElement('div');
-            card.className = 'card';
-
-            const left = document.createElement('div');
-            left.className = 'left';
-            const nm = document.createElement('div');
-            nm.className = 'name';
-            nm.textContent = s.name;
-            const path = document.createElement('div');
-            path.className = 'path';
-            path.textContent = s.description || `sites/${s.folder}`;
-
-            left.appendChild(nm);
-            left.appendChild(path);
-
-            const right = document.createElement('div');
-            right.className = 'right';
-
-            // Open site landing page (expects sites/<folder>/index.html)
-            const open = document.createElement('a');
-            open.className = 'btn';
-            open.href = `sites/${s.folder}/`;
-            open.textContent = 'View walkarounds';
-
-            right.appendChild(open);
-            card.appendChild(left);
-            card.appendChild(right);
-            list.appendChild(card);
-            count++;
-          }
-
-          msg.hidden = count !== 0;
-        };
-
-        render();
-        search.addEventListener('input', render);
-
-      } catch (e) {
-        err.hidden = false;
-        err.textContent = 'Failed to load sites.json:\n' + (e && e.message ? e.message : e);
-      }
-    })();
-  </script>
+  <p>Redirecting to <a href="./sites/">sites</a>...</p>
 </body>
 </html>
