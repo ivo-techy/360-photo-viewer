@@ -82,20 +82,16 @@
             const nm = document.createElement('div');
             nm.className = 'name';
             nm.textContent = s.name;
-            const path = document.createElement('div');
-            path.className = 'path';
-            path.textContent = s.description || `sites/${s.folder}`;
 
             left.appendChild(nm);
-            left.appendChild(path);
 
             const right = document.createElement('div');
             right.className = 'right';
 
-            // Open site landing page (expects sites/<folder>/index.html)
+            // Open site landing page 
             const open = document.createElement('a');
             open.className = 'btn';
-            open.href = `sites/${s.folder}/`;
+            open.href = `${s.folder}/`;
             open.textContent = 'View walkarounds';
 
             right.appendChild(open);
